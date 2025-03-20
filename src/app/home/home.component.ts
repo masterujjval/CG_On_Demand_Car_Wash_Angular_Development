@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { HomeService } from '../services/home.service';
 import { HttpFeatureKind } from '@angular/common/http';
+import { response } from 'express';
 
 
 
@@ -12,6 +13,8 @@ import { HttpFeatureKind } from '@angular/common/http';
   styleUrl: './home.component.css'
 })
 export class HomeComponent {
+  welcomeMessage: string = "";
+
   constructor (private homeService: HomeService){}
 
   toggleForms() {
@@ -24,6 +27,8 @@ export class HomeComponent {
     }
   }
 
+  // login method to send login credentials to the server
+
   login() {
     let email = (document.getElementById("loginEmail") as HTMLInputElement).value;
     let password = (document.getElementById("loginPassword") as HTMLInputElement).value;
@@ -32,8 +37,27 @@ export class HomeComponent {
       alert("Please fill in all fields!");
       return;
     }
-    alert("Login Successful! 🚀");
+  
+    this.homeService.login({ email, password }).subscribe({
+      next: (response: { token: string; }) => {
+        alert("Login Successful!");
+        localStorage.setItem('jwtToken', response.token);
+      },
+      error: (err: { error: { message: string; }; }) => {
+        alert("Login Failed: " + err.error.message);
+      }
+    })
+    
+    setTimeout(() => {
+    this.homeService.getWelcomeMessage().subscribe({
+        next:(response:any)=>{this.welcomeMessage=response;},
+      error:(error:any)=>{console.error("Error:",error);}
+    });
   }
+, 3000);
+  }
+
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   register() {
     let fullName = (document.getElementById("registerName") as HTMLInputElement).value;
@@ -49,12 +73,12 @@ export class HomeComponent {
 
     this.homeService.registerUser(userData).subscribe({
       next: (response: any) => {
-        alert("Registration Successful! 🎉");
+        alert("Registration Successful!");
         console.log("Success:", response);
         this.toggleForms();
       },
       error: (error: any) => {
-        alert("Registration Failed! ❌");
+        alert("Registration Failed! ");
         console.error("Error:", error);
       }
     });
